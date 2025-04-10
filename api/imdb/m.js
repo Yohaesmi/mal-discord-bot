@@ -23,27 +23,7 @@ export const imdb = {
       )
     },
     search: function(o){
-      o.query.apikey = process.env.imdb;
-
-      // console.log('QQQ', `https://api.myanimelist.net/v2/${o.q}?${o.query && new URLSearchParams(o.query).toString()||''}`)
-
-      // o.query = {
-      //   q: 'Jujitsu',
-      //   limit: 4
-      // }
-
-      // o.headers = {
-      //   'X-MAL-CLIENT-ID': process.env.malID
-      // }
-      return this.fetch(o);
-    },
-    get: function(o){
-      o.q = 'anime';
-      o.query.fields = o.query.fields.join(',');
-
-      o.headers = {
-        'X-MAL-CLIENT-ID': process.env.malID
-      }
+      o.query.apikey = process.env.imdbToken;
       return this.fetch(o);
     }
 }
