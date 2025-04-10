@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import axios from 'axios';
 
-export const mal = {
-    url: 'https://api.myanimelist.net/v2',
+export const imdb = {
+    url: 'https://www.omdbapi.com/',
     fetch: function(o){
-      return axios(`${this.url}/${o.q}${o.value && `/${o.value}`||''}?${o.query && new URLSearchParams(o.query).toString()||''}`, {
+      return axios(`${this.url}/?${o.query && new URLSearchParams(o.query).toString()||''}`, {
         method: o.method||'get',
         headers: {
           'Content-Type': 'application/json',
@@ -23,20 +23,18 @@ export const mal = {
       )
     },
     search: function(o){
-      o.q = 'anime';
-      // o.url = this.url;
-      // o.method = 'POST';
+      o.query.apikey = process.env.imdb;
 
-      console.log('QQQ', `https://api.myanimelist.net/v2/${o.q}?${o.query && new URLSearchParams(o.query).toString()||''}`)
+      // console.log('QQQ', `https://api.myanimelist.net/v2/${o.q}?${o.query && new URLSearchParams(o.query).toString()||''}`)
 
       // o.query = {
       //   q: 'Jujitsu',
       //   limit: 4
       // }
 
-      o.headers = {
-        'X-MAL-CLIENT-ID': process.env.malID
-      }
+      // o.headers = {
+      //   'X-MAL-CLIENT-ID': process.env.malID
+      // }
       return this.fetch(o);
     },
     get: function(o){

@@ -1,7 +1,11 @@
 import 'dotenv/config';
-import {Client, Events, GatewayIntentBits, EmbedBuilder, WebhookClient} from 'discord.js';
-import { mal } from './mal/m.js';
-import { shiki } from './shiki/m.js';
+import {Client, Events, Collection, GatewayIntentBits, MessageFlags} from 'discord.js';
+
+import {default as malFindMenu} from './botCmds/menu/mal/find.js';
+import {default as malFindSlash} from './botCmds/slash/mal/find.js';
+import {default as imdbFindMenu} from './botCmds/menu/imdb/find.js';
+import {default as imdbFindSlash} from './botCmds/slash/imdb/find.js';
+import { pusher } from './botCmds/push.js';
 
 const bot = new Client({ intents: [
   GatewayIntentBits.Guilds,
@@ -9,171 +13,80 @@ const bot = new Client({ intents: [
   GatewayIntentBits.DirectMessages,
   GatewayIntentBits.MessageContent] }
 );
+// bot.commands = new Collection();
 
-// shiki.fetch({
-//   q: title,
-//   limit: 10
-// }).then(
-//   res => {
-//     if(!res) return;
-//     console.log('[SHIKI]', res.data.animes);
-//   }
-// );
+// [
+//   malFindSlash,
+//   malFindMenu,
+//   imdbFindSlash,
+//   imdbFindMenu
+// ].forEach(e => {
+//   bot.commands.set(e.data.name, e);
+// });
 
 bot.once(Events.ClientReady, e => {
 	console.log(`Ready! Logged in as ${e.user.tag}`);
+  pusher(bot, true);
 });
 
-bot.on('messageCreate', async msg => {
-    console.log('NEW MSG!', `${msg.id},${msg.channel.id}, ${msg.content}`);
-    const filter = /^-ml `(?<title>[^`]+)`/gm;
-    if(msg.content.match(filter)){
-      let title;
-      msg.content.replace(filter, (_, ttl) => title = ttl);
-      // console.log('MSG', msg);
-      const channel = bot.channels.cache.get(msg.channelId);
-      const webhooks = await channel.fetchWebhooks();
-      let wh;
-      const whHere = webhooks.find(w => w.name === 'MAL');
-      if(!whHere){
-        wh = await channel.createWebhook({
-          name: 'MAL',
-          avatar: 'https://i.imgur.com/AfFp7pu.png',
-        });
-        // msg.reply('Вебхук не найден. Вебхук создан, повторите запрос');
-      }else wh = whHere;
-      // console.log('WH', webhooks);
+bot.on(Events.GuildCreate, async guild => {
+  pusher(bot);
+});
 
-      const getStatus = {
-        'finished_airing': 'завершено',
-        'currently_airing': 'онгоинг'
-      };
-      function wD(day, e){
-        const days = {
-        monday: ['понедельник', ['', 'ам']],
-        tuesday: ['вторник', ['', 'ам']],
-        wednesday: ['среда', ['', 'м']],
-        thursday: ['четверг', ['', 'ам']],
-        friday: ['пятница', ['', 'м']],
-        saturday: ['суббота', ['', 'м']],
-        sunday: ['воскресень', ['е', 'ям']]
-        };
+bot.on(Events.InteractionCreate, async int => {
+  if(int.isChatInputCommand()){
+    const cmd = int.client.commands.get(int.commandName);
 
-        if(!e) return days[day][0]+days[day][1][0];
-        else return days[day][0]+days[day][1][1];
-      };
-
-      const sh = {
-        s: await shiki.search({
-            q: title,
-            limit: 10
-          })
-        };
-      if(sh.s){
-        for(let e of sh.s.data.animes){
-          if(e.name === title){
-            console.log('RRR', e.russian);
-            sh.result = e;
-            break;
-          }
-        }
-        // sh.s.data.animes.some(e => {
-        //   if(e.name === title){
-        //     console.log('RRR', e.russian);
-        //     sh.result = e;
-        //     // return;
-        //   }
-        // })
-      };
-
-      mal.search({
-        query: {
-          q: title.slice(0, 64),
-          limit: 20,
-          nsfw: true
-        }
-      }).then(
-        res => {
-          // console.log('[MAL]', res);
-          if(!res) return;
-          res.data.forEach(e => {
-            console.log(e.node);
-            if(e.node.title === title){
-              console.log('Founded!', e.node);
-              mal.get({
-                value: e.node.id,
-                query: {
-                  fields: [
-                    'id',
-                    'title',
-                    'rank',
-                    'popularity',
-                    'score',
-                    'mean',
-                    'status',
-                    'broadcast',
-                    'statistics',
-                    'start_date',
-                    'num_episodes',
-                    'alternative_titles'
-                  ]
-                }
-              }).then(
-                res => {
-                  // const wh = new WebhookClient({ url: 'https://discord.com/api/webhooks/1321787314808295496/TJAdv1MfCemVgZjvV0g902AMTVLiB1rmeAtoT0bCdHXKQc3meXo-c5ITlYrlJvi_Ti9M' });
-                  console.log('[MAL]', res);
-                  // console.log('ID', res.id);
-
-                  const embed = new EmbedBuilder()
-                  .setColor(0x0099FF)
-                  .setTitle(res.title)
-                  .setDescription(`Ссылки: [MAL](https://myanimelist.net/anime/${res.id}) / ${sh.result && sh.result.id && `[Shikimori](https://shikimori.one/animes/${sh.result?.id})`}
-                  Синонимы: ${res.alternative_titles.synonyms?.map(e => '"'+e+'"')?.join(', ')||'-'}
-                  * RU: ${sh.result?.russian||'-'}\n* EN: ${res.alternative_titles.en||'-'}\n* JA: ${res.alternative_titles.ja||'-'}`)
-                  .setThumbnail(res.main_picture.large)
-                  .addFields(
-                    // { name: 'Synonims', value: res.alternative_titles.synonyms.map(e => '"'+e+'"').join(', ') },
-                    // { name: 'EN', value: res.alternative_titles.en },
-                    // { name: 'JA', value: res.alternative_titles.ja },
-                    // { name: '\u200B', value: '\u200B' },
-                    // { name: 'ID', value: res.id.toString(), inline:true },
-                    { name: 'Рейтинг', value: res.mean.toString(), inline:true },
-                    { name: 'Ранг', value: res.rank?.toString()||'-', inline: true },
-                    { name: 'Популярность', value: res.popularity?.toString()||'-', inline: true },
-                    // { name: '\u200B', value: '\u200B' },
-                    // { name: 'Эпизодов', value: res.num_episodes.toString(), inline:true },
-                    // { name: 'Дата старта', value: res.start_date, inline:true },
-                    // { name: 'Статус', value: getStatus[res.status]||res.status, inline:true },
-                    { name: 'Инфо', value: `* Эпизодов: ${res.num_episodes?.toString()||'?'}\n* Дата старта: ${res.start_date}\n* Статус: ${getStatus[res.status]||res.status}\n* День выхода: по ${wD(res.broadcast.day_of_the_week, true)}, ${res.broadcast.start_time}` }
-                    // { name: '\u200B', value: '\u200B' },
-                    // { name: 'Rank', value: res.rank?.toString()||'-', inline: true },
-                    // { name: 'Popularity', value: res.popularity?.toString()||'-', inline: true },
-                  );
-                  wh.send({
-                    // content: 'Webhook test',
-                    username: 'MAL',
-                    avatarURL: 'https://i.imgur.com/AfFp7pu.png',
-                    embeds: [embed],
-                    message_reference: {
-                      message_id: msg.id,
-                      channel_id: msg.channel.id
-                    }
-                  });
-                },
-                err => {
-                  console.log('[MAL]', err);
-                }
-              )
-            }
-          })
-        },
-        err => {
-          console.error('[MAL]', err);
-        }
-      )
-        // msg.reply('Lol!');
+    try{
+      await cmd.execute(int);
+    }catch (error){
+      console.error(error);
+      if(int.replied||int.deferred){
+        await int.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+      }else{
+        await int.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+      }
     }
-})
+  }else
+  if(int.isMessageContextMenuCommand()){
+    const cmd = int.client.commands.get(int.commandName);
+
+    try{
+      await cmd.execute(int);
+    }catch (error){
+      console.error(error);
+      if(int.replied||int.deferred){
+        await int.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+      }else{
+        await int.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+      }
+    }
+  }
+});
+
+// bot.on('messageCreate', async msg => {
+//   if(msg.author.bot) return;
+//   // console.log('NEW MSG!', `${msg.id},${msg.channel.id}, ${msg.content}`);
+//   // console.log('NEW MSG!!!', msg);
+//   // console.log('ROLE', msg.mentions.roles.first());
+//   const role = msg.mentions.roles.first();
+//   // console.log('R', role);
+//   if(role && role.name === 'MAL') find(msg, bot);
+//   else
+//   if(role && role.name === 'IMDB') findIMDB(msg, bot);
+//   else
+//   if(msg.content.startsWith('-p')){
+//     const voiceChannel = msg.member.voice.channel;
+//     if (!voiceChannel) return msg.channel.send("Прошу прощения, но для прослушивания музыки вам нужно находиться в голосовом канале.");
+//     const permissions = voiceChannel.permissionsFor(msg.client.user);
+//     if (!permissions.has("CONNECT")) {
+//       return msg.channel.send("Sorry, but I need **`CONNECT`** permissions to proceed!");
+//     }
+//     if (!permissions.has("SPEAK")) {
+//       return msg.channel.send("Sorry, but I need **`SPEAK`** permissions to proceed!");
+//     }
+//   }
+// })
 
 // Log in to Discord with your client's token
-bot.login(process.env.TOKEN);
+bot.login(process.env.DiscordTOKEN);
