@@ -33,7 +33,6 @@ export default {
       title: int.options.getString('title'),
       ephemeral: int.options.getBoolean('ephemeral')
     };
-    console.log('DATA', data);
     try{
       const res = await findItem(data.type, data.title);
       // console.log('RES', res);

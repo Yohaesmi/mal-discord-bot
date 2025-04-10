@@ -4,11 +4,11 @@ import { findItemImdb } from '../../func/imdb/findItem.js';
 
 export default {
   data: new SlashCommandBuilder()
-	.setName('imdb')
+	.setName('imdb-search')
   .setDescription('Find info about film/series')
   .addStringOption(o =>
     o.setName('title')
-    .setDescription('Anime/manga title')
+    .setDescription('Film/series title')
     .setRequired(true)
   )
   .addBooleanOption(o =>
@@ -21,11 +21,10 @@ export default {
       title: int.options.getString('title'),
       ephemeral: int.options.getBoolean('ephemeral')
     };
-    console.log('DATA', data);
 
     try{
       const res = await findItemImdb(data.title);
-      console.log('RES', res);
+      // console.log('RES', res);
 
       const embed = new EmbedBuilder()
       .setColor(0x0099FF)

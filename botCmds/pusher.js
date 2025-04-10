@@ -28,7 +28,7 @@ export async function pusher(bot, full){
   });
 
 
-  const rest = new REST().setToken(process.env['DiscordTOKEN']);
+  const rest = new REST().setToken(process.env['DiscordToken']);
   bot.guilds.cache.forEach(async e => {
     try{
       console.log(`Started refreshing ${cmds.length} application (/) commands.`);
