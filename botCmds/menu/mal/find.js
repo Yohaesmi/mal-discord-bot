@@ -20,6 +20,12 @@ export default {
 
     try{
       const res = await findItem(type, title);
+      if(!res){
+        return await int.reply({
+          content: `MAL: ${type} ${title} не найдено!`,
+          flags: MessageFlags.Ephemeral
+        });
+      }
       // console.log('RES', res);
 
       const embed = new EmbedBuilder()

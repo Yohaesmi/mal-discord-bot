@@ -1,17 +1,15 @@
 import { imdb } from "../../../api/imdb/m.js";
 
 export async function findItemImdb(title){
+  const fixer = (text) => text.toLowerCase();
   return imdb.search({
     query: {
-      t: title
+      t: fixer(title)
     }
   }).then(
     res => {
       console.log('[IMDB]', res);
-      if(res.Response === 'False') return {imdb: {
-        error: 'Film/series not found!'
-      }
-    };
+      if(res.Response === 'False') return false;
 
       const rt = (res) => {
         let t = '';

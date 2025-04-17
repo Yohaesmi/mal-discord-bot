@@ -24,6 +24,12 @@ export default {
 
     try{
       const res = await findItemImdb(data.title);
+      if(!res){
+        return await int.reply({
+          content: `IMDB: ${data.title} не найдено!`,
+          ...(data.ephemeral) && {flags: MessageFlags.Ephemeral}
+        });
+      }
       // console.log('RES', res);
 
       const embed = new EmbedBuilder()

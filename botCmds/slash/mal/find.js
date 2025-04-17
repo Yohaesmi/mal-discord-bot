@@ -35,6 +35,12 @@ export default {
     };
     try{
       const res = await findItem(data.type, data.title);
+      if(!res){
+        return await int.reply({
+          content: `MAL: ${data.type} ${data.title} не найдено!`,
+          ...(data.ephemeral) && {flags: MessageFlags.Ephemeral}
+        });
+      }
       // console.log('RES', res);
 
       const embed = new EmbedBuilder()

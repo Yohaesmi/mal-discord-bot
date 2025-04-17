@@ -20,8 +20,8 @@ export default {
     try{
       const res = await findItemImdb(title);
       // console.log('RES', res);
-      if(res.error) return await int.reply({
-        content: `[IMDB] ${res.error}`,
+      if(!res) return await int.reply({
+        content: `IMDB: ${title}`,
         flags: MessageFlags.Ephemeral
       });
 
