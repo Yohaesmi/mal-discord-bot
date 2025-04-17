@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "index.js",
-    "start": "node main.js"
+    "start": "npm audit fix && node main.js"
   },
   "author": "",
   "license": "ISC",
